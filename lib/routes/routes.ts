@@ -12,17 +12,22 @@ export class Routes {
 			.get(this.controller.default)
 
 		app.route('/contact')
-			.get((req: Request, res: Response, next: NextFunction) => {
-				if (req.query.key !== process.env.apikey)
-					res.status(401).send(`You shall not pass!`)
-				else next()
-			}, this.controller.getAll)
-			.post(this.controller.create)
+			.get(this.checkAuth, this.controller.getAll)
+			.post(this.checkAuth, this.controller.create)
 
 		app.route('/contact/:contactId')
-			.get(this.controller.get)
-			.put(this.controller.put)
-			.delete(this.controller.delete)
+			.get(this.checkAuth, this.controller.get)
+			.put(this.checkAuth, this.controller.put)
+			.delete(this.checkAuth, this.controller.delete)
 
+	}
+
+	private checkAuth(req: Request, res: Response, next: NextFunction): void {
+		const { authorization } = req.headers
+		let token: string = null
+		if (authorization && authorization.startsWith('Bearer ')) token = authorization.slice(7, authorization.length)
+
+		if (token !== null && token === process.env.apikey) next()
+		else res.status(401).send(`You shall not pass!`)
 	}
 }
